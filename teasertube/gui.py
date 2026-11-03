@@ -56,6 +56,7 @@ LINE = QColor(170, 170, 180, 190)
 YELLOW = "#FFD60A"
 
 QUALITIES = ["Melhor qualidade", "1080p", "720p", "480p", "360p"]
+CHECK_ICON = (ASSETS / "check.svg").as_posix()  # ✓ amarelo das caixinhas marcadas
 
 STYLE = f"""
 * {{ font-family: "Inter", "Segoe UI", "Ubuntu", "Helvetica Neue", Arial, sans-serif; }}
@@ -97,9 +98,11 @@ QListWidget {{ background: #1a1a20; border: 1px solid #2c2c35; border-radius: 12
               padding: 4px; outline: none; font-size: 13px; }}
 QListWidget::item {{ padding: 5px 4px; border-radius: 6px; }}
 QListWidget::item:hover {{ background: #24242c; }}
-QListWidget::indicator {{ width: 16px; height: 16px; border-radius: 4px; border: 1px solid #55555f;
+QListWidget::indicator {{ width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid #55555f;
               background: #1f1f26; }}
-QListWidget::indicator:checked {{ background: {YELLOW}; border-color: {YELLOW}; }}
+QListWidget::indicator:hover {{ border-color: #8a8a95; }}
+QListWidget::indicator:checked {{ background: rgba(255, 214, 10, 48); border: 1.5px solid {YELLOW};
+              image: url({CHECK_ICON}); }}
 QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
 QScrollBar::handle:vertical {{ background: #3a3a44; border-radius: 4px; min-height: 24px; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
@@ -725,8 +728,13 @@ class MainWindow(QWidget):
     def _update_size_hint(self, *_args) -> None:
         """Mostra o tamanho estimado e avisa se o disco não aguenta."""
         info = self.info
-        if not info or info.kind != "video":
-            self.size_hint.setText("")
+        if not info:
+            self.size_hint.hide()
+            return
+        self.size_hint.show()
+        if info.kind != "video":  # playlist: o tamanho de cada vídeo ainda não é conhecido
+            self.size_hint.setText(f"Espaço livre na pasta: {core.fmt_size(free_bytes(self.folder))}")
+            self.size_hint.setStyleSheet("")
             return
         mode = "audio" if self.btn_audio.isChecked() else "video"
         height = self.quality.currentData() if mode == "video" else None

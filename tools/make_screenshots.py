@@ -53,7 +53,7 @@ def main() -> None:
         single_url="y",
     )
     w._on_info((info, fake_thumb()))
-    for i in (6, 7):
+    for i in (2, 6, 7):
         w.pl_list.item(i).setCheckState(gui.Qt.Unchecked)
     app.processEvents(); app.processEvents()
     w.grab().save(str(OUT / "playlist.png"))
