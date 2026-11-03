@@ -160,6 +160,11 @@ No Windows, troque `:` por `;` em `--add-data` e use `--icon teasertube/assets/i
 Se o TeaserTube foi útil, [deixe uma estrela no repositório](https://github.com/dutrathiagodev/TeaserTube). Isso ajuda mais gente a encontrar o projeto
 (e ajuda a conseguir, um dia, a assinatura digital que tira o aviso azul do Windows).
 
+## Segurança
+
+O código é aberto, os arquivos das releases são gerados pelo GitHub Actions e trazem checksums e atestado de origem.
+Veja como conferir o seu download e como reportar um problema em [SECURITY.md](SECURITY.md).
+
 ## Contribuir
 
 Pull requests são bem-vindos. O código fica em `teasertube/` (`core.py` cuida dos downloads,

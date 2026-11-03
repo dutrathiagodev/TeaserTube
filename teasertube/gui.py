@@ -285,6 +285,7 @@ class Task(QThread):
 
 def label(text: str = "", name: str = "", wrap: bool = False, align=None) -> QLabel:
     lb = QLabel(text)
+    lb.setTextFormat(Qt.PlainText)  # títulos vêm da internet: nunca interpretar como HTML
     if name:
         lb.setObjectName(name)
     lb.setWordWrap(wrap)
@@ -597,11 +598,11 @@ class MainWindow(QWidget):
         def work(_task: Task):
             info = core.fetch_info(url, single=single)
             image = QImage()
-            if info.thumbnail:
+            if info.thumbnail and info.thumbnail.lower().startswith("https://"):
                 try:
                     req = urllib.request.Request(info.thumbnail, headers={"User-Agent": "Mozilla/5.0"})
                     with urllib.request.urlopen(req, timeout=10) as r:
-                        image.loadFromData(r.read())
+                        image.loadFromData(r.read(5_000_000))  # no máximo 5 MB
                 except Exception:  # noqa: BLE001
                     pass
             return info, image
