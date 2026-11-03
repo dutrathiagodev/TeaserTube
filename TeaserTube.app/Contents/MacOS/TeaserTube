@@ -1,0 +1,4 @@
+#!/bin/bash
+# Abre o TeaserTube: roda o TeaserTube.sh que está na pasta ao lado deste .app.
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+exec bash "$ROOT/TeaserTube.sh"

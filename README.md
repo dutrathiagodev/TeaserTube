@@ -22,7 +22,7 @@ Baixe ou clone o repositório e dê **dois cliques** no launcher do seu sistema:
 | Sistema | Arquivo |
 |---------|---------|
 | Windows | `TeaserTube.bat` |
-| macOS   | `TeaserTube.command` |
+| macOS   | `TeaserTube.app` (já vem com o ícone) |
 | Linux   | `TeaserTube.sh` (ou `./TeaserTube.sh` no terminal) |
 
 Na **primeira vez** ele cria o ambiente, instala as dependências (leva um minuto) e coloca
@@ -43,11 +43,17 @@ pip install -r requirements.txt
 python -m teasertube
 ```
 
-## Gerar executável (opcional)
+## App com ícone para Windows, macOS e Linux (sem precisar de Python)
+
+O workflow `.github/workflows/release.yml` gera o `TeaserTube.exe`, o `TeaserTube.app` e o binário Linux,
+todos com o ícone. Crie uma tag (`git tag v0.1.0 && git push --tags`) ou rode o workflow em
+*Actions > Release > Run workflow*; os arquivos aparecem nos Releases do GitHub.
+
+## Gerar executável manualmente
 
 ```bash
 pip install pyinstaller
-pyinstaller --noconfirm --windowed --name TeaserTube --add-data "teasertube/assets:teasertube/assets" teasertube/__main__.py
+pyinstaller --noconfirm --windowed --name TeaserTube --icon teasertube/assets/icon.png --add-data "teasertube/assets:teasertube/assets" --collect-all imageio_ffmpeg --collect-all deno --collect-all yt_dlp_ejs run_teasertube.py
 ```
 
 No Windows, troque `:` por `;` em `--add-data`. O resultado fica em `dist/`.

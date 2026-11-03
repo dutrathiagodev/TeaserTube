@@ -7,6 +7,7 @@ VENV=".venv"
 aviso() {
     echo "$1"
     command -v notify-send >/dev/null 2>&1 && notify-send "TeaserTube" "$1"
+    command -v osascript >/dev/null 2>&1 && osascript -e "display notification \"$1\" with title \"TeaserTube\"" >/dev/null 2>&1
 }
 
 falha() {

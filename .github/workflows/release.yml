@@ -1,0 +1,55 @@
+name: Release
+
+# Gera o app com ícone para Windows, macOS e Linux.
+# Rode manualmente (Actions > Release > Run workflow) ou crie uma tag: git tag v0.1.0 && git push --tags
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows, sep: ";", icon: teasertube/assets/icon.ico }
+          - { os: macos-latest, name: macos, sep: ":", icon: teasertube/assets/icon.icns }
+          - { os: ubuntu-latest, name: linux, sep: ":", icon: teasertube/assets/icon.png }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependências
+        run: pip install -r requirements.txt pyinstaller
+      - name: Empacotar
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --windowed --name TeaserTube \
+            --icon "${{ matrix.icon }}" \
+            --add-data "teasertube/assets${{ matrix.sep }}teasertube/assets" \
+            --collect-all imageio_ffmpeg --collect-all deno --collect-all yt_dlp_ejs \
+            run_teasertube.py
+      - name: Compactar
+        shell: bash
+        run: |
+          cd dist
+          case "${{ matrix.name }}" in
+            windows) 7z a ../TeaserTube-windows.zip TeaserTube ;;
+            macos)   ditto -c -k --keepParent TeaserTube.app ../TeaserTube-macos.zip ;;
+            linux)   tar -czf ../TeaserTube-linux.tar.gz TeaserTube ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TeaserTube-${{ matrix.name }}
+          path: TeaserTube-*
+      - name: Publicar na release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: TeaserTube-*

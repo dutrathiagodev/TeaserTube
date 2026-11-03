@@ -85,6 +85,9 @@ def _linux(desktop: Path) -> Path:
         f.write_text(entry, encoding="utf-8")
         _make_executable(f)
     _run(["gio", "set", str(desk_file), "metadata::trusted", "true"])  # GNOME: permite abrir
+    icon_uri = (ASSETS / "icon.png").as_uri()
+    for target in (ROOT / "TeaserTube.sh", ROOT):  # ícone no launcher e na pasta do projeto
+        _run(["gio", "set", str(target), "metadata::custom-icon", icon_uri])
     _run(["update-desktop-database", str(apps)])
     return desk_file
 

@@ -1,4 +1,4 @@
-"""Gera teasertube/assets/logo.svg: TEASERTUB + câmera (o "E") + ondas de som.
+"""Gera teasertube/assets/logo.svg e icon.svg: TEASERTUB + câmera (o "E") + ondas de som.
 
 As letras viram curvas (path), então o logo não depende de nenhuma fonte instalada.
 Uso (na raiz do repositório):  python tools/make_logo.py
@@ -67,6 +67,30 @@ def camera(ox: float) -> str:
     )
 
 
+def icon_svg() -> str:
+    """Ícone de app: quadrado escuro com brilho no topo, câmera branca e ondas amarelas."""
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3a42"/><stop offset="1" stop-color="#08080a"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="clip"><rect width="100" height="100" rx="22"/></clipPath>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <g clip-path="url(#clip)"><path d="M0 0H100V40C76 52 24 52 0 40Z" fill="url(#gloss)"/></g>
+  <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="21.5" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="1.5"/>
+  <g transform="translate(9 27.5) scale(0.45)">
+    {camera(0)}
+    {waves(130, 50, sw=11)}
+  </g>
+</svg>
+'''
+
+
 def main() -> None:
     QGuiApplication(sys.argv)
     font = QFont("DejaVu Sans Condensed")
@@ -88,7 +112,8 @@ def main() -> None:
         + f"\n    {camera(cam_x)}\n    {waves(cam_x + 130, 50)}\n  </g>\n</svg>\n"
     )
     (ASSETS / "logo.svg").write_text(svg, encoding="utf-8")
-    print(f"logo.svg gerado: {total + 16:.0f} x 124")
+    (ASSETS / "icon.svg").write_text(icon_svg(), encoding="utf-8")
+    print(f"logo.svg e icon.svg gerados: {total + 16:.0f} x 124")
 
 
 if __name__ == "__main__":

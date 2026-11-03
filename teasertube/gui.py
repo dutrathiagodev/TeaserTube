@@ -113,6 +113,8 @@ def app_root() -> Path:
 
 
 def default_folder() -> str:
+    if getattr(sys, "frozen", False) and sys.platform == "darwin":
+        return str(Path.home() / "Downloads" / "TeaserTube")  # não dá para gravar dentro do .app
     return str(app_root() / "downloads")
 
 

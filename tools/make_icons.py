@@ -53,6 +53,9 @@ def main() -> None:
     (ASSETS / "icon.png").write_bytes(pngs[512])
     (ASSETS / "icon.ico").write_bytes(make_ico({s: pngs[s] for s in (16, 32, 48, 64, 128, 256)}))
     (ASSETS / "icon.icns").write_bytes(make_icns(pngs))
+    app_res = ASSETS.parent.parent / "TeaserTube.app" / "Contents" / "Resources"
+    if app_res.exists():
+        (app_res / "icon.icns").write_bytes(make_icns(pngs))
     print("ícones gerados em", ASSETS)
 
 
