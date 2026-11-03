@@ -74,7 +74,7 @@ jobs:
           python -m PyInstaller --noconfirm --windowed --name TeaserTube \
             --icon "${{ matrix.icon }}" \
             --add-data "teasertube/assets${{ matrix.sep }}teasertube/assets" \
-            --add-binary "$DENO_BIN${{ matrix.sep }}." \
+            --add-binary "$DENO_BIN${{ matrix.sep }}bin" \
             --collect-all imageio_ffmpeg --collect-all deno --collect-all yt_dlp_ejs \
             run_teasertube.py
       - name: Conferir o app empacotado

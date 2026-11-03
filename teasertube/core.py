@@ -91,8 +91,8 @@ def js_runtimes() -> dict:
     bundle = getattr(sys, "_MEIPASS", None)  # app empacotado (PyInstaller)
     if bundle:
         for exe in ("deno", "deno.exe"):
-            if (Path(bundle) / exe).exists():
-                found["deno"] = {"path": str(Path(bundle) / exe)}
+            if (Path(bundle) / "bin" / exe).exists():
+                found["deno"] = {"path": str(Path(bundle) / "bin" / exe)}
     for name in ("deno", "node", "bun"):
         if name in found:
             continue
