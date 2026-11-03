@@ -1,7 +1,8 @@
 name: Release
 
-# Gera o app com ícone para Windows, macOS e Linux.
-# Rode manualmente (Actions > Release > Run workflow) ou crie uma tag: git tag v0.1.0 && git push --tags
+# Gera o app com ícone para Windows, macOS (Apple Silicon e Intel) e Linux (x64 e ARM64).
+# Rode manualmente (Actions > Release > Run workflow) para só testar a build,
+# ou crie uma tag para publicar:  git tag v0.1.1 && git push --tags
 on:
   push:
     tags: ["v*"]
@@ -16,40 +17,96 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: windows-latest, name: windows, sep: ";", icon: teasertube/assets/icon.ico }
-          - { os: macos-latest, name: macos, sep: ":", icon: teasertube/assets/icon.icns }
-          - { os: ubuntu-latest, name: linux, sep: ":", icon: teasertube/assets/icon.png }
+          - name: windows-x64
+            os: windows-latest
+            sep: ";"
+            icon: teasertube/assets/icon.ico
+            exe: dist/TeaserTube/TeaserTube.exe
+            asset: TeaserTube-windows-x64.zip
+          - name: macos-apple-silicon
+            os: macos-latest
+            sep: ":"
+            icon: teasertube/assets/icon.icns
+            exe: dist/TeaserTube.app/Contents/MacOS/TeaserTube
+            asset: TeaserTube-macos-apple-silicon.zip
+          - name: macos-intel
+            os: macos-15-intel
+            sep: ":"
+            icon: teasertube/assets/icon.icns
+            exe: dist/TeaserTube.app/Contents/MacOS/TeaserTube
+            asset: TeaserTube-macos-intel.zip
+          # Linux é compilado numa base antiga (Debian 11, glibc 2.31) para abrir
+          # em praticamente qualquer distribuição de 2020 em diante.
+          - name: linux-x64
+            os: ubuntu-latest
+            container: python:3.12-bullseye
+            sep: ":"
+            icon: teasertube/assets/icon.png
+            exe: dist/TeaserTube/TeaserTube
+            asset: TeaserTube-linux-x64.tar.gz
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            container: python:3.12-bullseye
+            sep: ":"
+            icon: teasertube/assets/icon.png
+            exe: dist/TeaserTube/TeaserTube
+            asset: TeaserTube-linux-arm64.tar.gz
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        if: ${{ !matrix.container }}
         with:
           python-version: "3.12"
       - name: Dependências
-        run: pip install -r requirements.txt pyinstaller
+        shell: bash
+        run: python -m pip install -r requirements.txt pyinstaller
+      - name: Localizar o Deno
+        id: deno
+        shell: bash
+        run: echo "path=$(python -c 'import deno; print(deno.find_deno_bin())')" >> "$GITHUB_OUTPUT"
       - name: Empacotar
         shell: bash
+        env:
+          DENO_BIN: ${{ steps.deno.outputs.path }}
         run: |
-          pyinstaller --noconfirm --windowed --name TeaserTube \
+          python -m PyInstaller --noconfirm --windowed --name TeaserTube \
             --icon "${{ matrix.icon }}" \
             --add-data "teasertube/assets${{ matrix.sep }}teasertube/assets" \
+            --add-binary "$DENO_BIN${{ matrix.sep }}." \
             --collect-all imageio_ffmpeg --collect-all deno --collect-all yt_dlp_ejs \
             run_teasertube.py
+      - name: Conferir o app empacotado
+        shell: bash
+        run: |
+          "${{ matrix.exe }}" --diagnostico || [ "${{ runner.os }}" = "Windows" ]
       - name: Compactar
         shell: bash
         run: |
           cd dist
-          case "${{ matrix.name }}" in
-            windows) 7z a ../TeaserTube-windows.zip TeaserTube ;;
-            macos)   ditto -c -k --keepParent TeaserTube.app ../TeaserTube-macos.zip ;;
-            linux)   tar -czf ../TeaserTube-linux.tar.gz TeaserTube ;;
+          case "${{ runner.os }}" in
+            Windows) 7z a "../${{ matrix.asset }}" TeaserTube ;;
+            macOS)   ditto -c -k --keepParent TeaserTube.app "../${{ matrix.asset }}" ;;
+            Linux)   tar -czf "../${{ matrix.asset }}" TeaserTube ;;
           esac
       - uses: actions/upload-artifact@v4
         with:
-          name: TeaserTube-${{ matrix.name }}
-          path: TeaserTube-*
-      - name: Publicar na release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+          name: ${{ matrix.name }}
+          path: ${{ matrix.asset }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          files: TeaserTube-*
+          path: assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: TeaserTube ${{ github.ref_name }}
+          body_path: .github/release-notes.md
+          files: assets/*

@@ -60,16 +60,23 @@ Na página de [Releases](https://github.com/dutrathiagodev/TeaserTube/releases),
 
 | Sistema | Arquivo | Como abrir |
 |---------|---------|------------|
-| Windows | `TeaserTube-windows.zip` | **Extraia o zip** e abra `TeaserTube.exe` |
-| macOS   | `TeaserTube-macos.zip`   | Extraia e abra `TeaserTube.app` |
-| Linux   | `TeaserTube-linux.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
+| Windows 10/11 (64 bits) | `TeaserTube-windows-x64.zip` | **Extraia o zip** e abra `TeaserTube.exe` |
+| Mac com chip Apple (M1 ou mais novo) | `TeaserTube-macos-apple-silicon.zip` | Extraia e abra `TeaserTube.app` |
+| Mac com processador Intel | `TeaserTube-macos-intel.zip` | Extraia e abra `TeaserTube.app` |
+| Linux 64 bits (Intel/AMD) | `TeaserTube-linux-x64.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
+| Linux ARM64 (Raspberry Pi etc.) | `TeaserTube-linux-arm64.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
 
 > Extraia tudo antes de abrir: o app precisa dos arquivos que vêm na mesma pasta.
 > O app não é assinado digitalmente, então o Windows (SmartScreen) e o macOS (Gatekeeper) podem
 > avisar na primeira vez. No Windows, clique em *Mais informações > Executar assim mesmo*;
 > no macOS, clique com o botão direito no app e escolha *Abrir*.
 
-Prefere rodar pelo código? Veja abaixo.
+**Linux:** os arquivos são compilados numa base antiga e abrem nas distribuições de 2020 em diante
+(Ubuntu 20.04+, Debian 11+, Fedora, Arch, openSUSE, Mint...). Se não abrir, instale a biblioteca
+gráfica que falta: `sudo apt install libxcb-cursor0` (Debian/Ubuntu) ou `sudo dnf install xcb-util-cursor` (Fedora).
+
+**Outros sistemas** (Windows 7/8, sistemas 32 bits, BSD): o Qt atual não roda neles. Com Python 3.9+
+dá para usar pelo código, veja abaixo.
 
 ## Como usar (pelo código)
 

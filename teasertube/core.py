@@ -4,8 +4,10 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import sys
 import threading
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import parse_qs, urlparse
 
@@ -86,7 +88,14 @@ def has_ffmpeg() -> bool:
 def js_runtimes() -> dict:
     """Runtime JS usado pelo yt-dlp para decifrar o YouTube (deno, node ou bun)."""
     found: dict = {}
+    bundle = getattr(sys, "_MEIPASS", None)  # app empacotado (PyInstaller)
+    if bundle:
+        for exe in ("deno", "deno.exe"):
+            if (Path(bundle) / exe).exists():
+                found["deno"] = {"path": str(Path(bundle) / exe)}
     for name in ("deno", "node", "bun"):
+        if name in found:
+            continue
         path = shutil.which(name)
         if path:
             found[name] = {"path": path}
