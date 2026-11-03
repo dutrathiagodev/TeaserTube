@@ -17,7 +17,10 @@ Os arquivos **Source code (zip / tar.gz)** no fim da página são só o código-
 
 ### O sistema mostrou um aviso de segurança?
 
-- **Windows (tela azul "O Windows protegeu o computador"):** é o SmartScreen, que aparece em qualquer programa novo ainda sem assinatura digital. Clique em **Mais informações** e depois em **Executar assim mesmo**. Só na primeira vez.
+- **Windows (tela azul "O Windows protegeu o computador"):** é o SmartScreen, que aparece em qualquer programa novo ainda sem assinatura digital. Dois cliques resolvem, só na primeira vez:
+
+  ![Clique em Mais informações e depois em Executar assim mesmo](https://raw.githubusercontent.com/dutrathiagodev/TeaserTube/main/docs/assets/smartscreen.png)
+
 - **macOS:** clique com o botão direito no app e escolha **Abrir**. Só na primeira vez.
 - O código é aberto e os arquivos são gerados automaticamente pelo GitHub Actions a partir deste repositório.
 
@@ -33,5 +36,7 @@ Funciona nas distribuições de 2020 em diante (Ubuntu 20.04+, Debian 11+, Fedor
 - Playlists: escolha quais vídeos baixar; cada playlist vai para a própria pasta
 - Mostra qual vídeo falhou e por quê, e tenta de novo sozinho quando é falha passageira
 - Não precisa instalar Python, ffmpeg nem mais nada
+
+⭐ **Gostou?** [Deixe uma estrela no repositório](https://github.com/dutrathiagodev/TeaserTube), ajuda muito o projeto!
 
 Dúvidas ou problemas? Abra uma [issue](https://github.com/dutrathiagodev/TeaserTube/issues).

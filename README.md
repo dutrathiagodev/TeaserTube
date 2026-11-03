@@ -54,6 +54,11 @@ Marque só os vídeos que quiser. Cada playlist vai para a própria pasta, numer
 - **Progresso e cancelar:** acompanhe a velocidade e o tempo restante.
 - **Seus arquivos ficam à mão:** por padrão, na pasta `downloads/` do próprio app (dá para trocar).
 
+<p align="center">
+  <strong>⭐ O TeaserTube te salvou tempo?</strong><br/>
+  Deixa uma estrela aqui no topo da página. É de graça, leva um segundo e deixa o dev muito feliz 😄
+</p>
+
 ## Baixar o app pronto (sem Python)
 
 Na página de [Releases](https://github.com/dutrathiagodev/TeaserTube/releases), baixe o arquivo do seu sistema:
@@ -68,11 +73,19 @@ Na página de [Releases](https://github.com/dutrathiagodev/TeaserTube/releases),
 
 ### O Windows mostrou uma tela azul ("O Windows protegeu o computador")?
 
-É o **Microsoft Defender SmartScreen**. Ele aparece para qualquer programa novo que ainda não tem
-assinatura digital, mesmo sendo seguro. O TeaserTube é open source: todo o código está neste repositório
-e os arquivos são gerados automaticamente pelo GitHub Actions, sem passar pela máquina de ninguém.
+Calma, é normal. É o **Microsoft Defender SmartScreen**, que aparece para qualquer programa novo que
+ainda não tem assinatura digital, mesmo sendo seguro. O TeaserTube é open source: todo o código está
+neste repositório e os arquivos são gerados automaticamente pelo GitHub Actions, sem passar pela máquina
+de ninguém. Dois cliques resolvem (só na primeira vez):
 
-Para continuar: clique em **Mais informações** e depois em **Executar assim mesmo**. Só na primeira vez.
+<p align="center">
+  <img src="docs/assets/smartscreen.png" alt="Passo a passo: clique em Mais informações e depois em Executar assim mesmo" width="860" />
+</p>
+
+1. Clique em **Mais informações**.
+2. Clique em **Executar assim mesmo**.
+
+> A imagem é uma ilustração; a tela do seu Windows pode ter pequenas diferenças.
 
 ### No Mac o sistema bloqueou o app?
 
@@ -141,6 +154,11 @@ pyinstaller --noconfirm --windowed --name TeaserTube --icon teasertube/assets/ic
 No Windows, troque `:` por `;` em `--add-data` e use `--icon teasertube/assets/icon.ico`.
 
 </details>
+
+## Gostou? Dá uma estrela ⭐
+
+Se o TeaserTube foi útil, [deixe uma estrela no repositório](https://github.com/dutrathiagodev/TeaserTube). Isso ajuda mais gente a encontrar o projeto
+(e ajuda a conseguir, um dia, a assinatura digital que tira o aviso azul do Windows).
 
 ## Contribuir
 
