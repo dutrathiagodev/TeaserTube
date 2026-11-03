@@ -328,10 +328,9 @@ class MainWindow(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
 
         logo = QSvgWidget(str(ASSETS / "logo.svg"))
-        logo.setFixedSize(QSize(270, 61))
+        logo.setFixedSize(QSize(560, 68))
         lay.addWidget(logo, alignment=Qt.AlignHCenter)
         lay.addSpacing(6)
-        lay.addWidget(label(APP_NAME, "title", align=Qt.AlignHCenter))
         lay.addWidget(
             label(
                 "Baixador de vídeos e áudios. Cole o link de um vídeo ou playlist do YouTube e escolha o formato.",
