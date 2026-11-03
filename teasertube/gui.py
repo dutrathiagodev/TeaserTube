@@ -6,12 +6,14 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import urllib.request
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QThread, QTimer, Signal
+from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import (
+    QDesktopServices,
     QBrush,
     QColor,
     QIcon,
@@ -45,7 +47,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import core
+from . import __version__, core, updater
 
 APP_NAME = "TeaserTube"
 ASSETS = Path(__file__).parent / "assets"
@@ -67,6 +69,13 @@ QLabel {{ color: #f4f4f5; background: transparent; }}
 #bigTitle {{ font-size: 20px; font-weight: 700; }}
 #error {{ color: #ff6b6b; }}
 #failBox {{ background: #1d1719; border: 1px solid #4a2f35; border-radius: 12px; }}
+#updateBanner {{ background: rgba(255, 214, 10, 30); border: 1px solid rgba(255, 214, 10, 110); border-radius: 12px; }}
+#updateText {{ color: #ffe14d; font-weight: 600; }}
+#updBtn {{ background: {YELLOW}; color: #141414; padding: 7px 16px; font-size: 13px; border-radius: 10px; }}
+#updBtn:hover {{ background: #ffe14d; }}
+#updBtn:disabled {{ background: #5c5220; color: #2b2b2b; }}
+#updLater {{ background: transparent; color: #b4b4be; padding: 7px 12px; font-size: 13px; }}
+#updLater:hover {{ color: #ffffff; background: transparent; }}
 #failTitle {{ color: #ff9a9a; font-weight: 600; }}
 #inputRow {{ background: #1f1f26; border: 1px solid #2c2c35; border-radius: 16px; }}
 #inputRow:focus-within {{ border: 1px solid {YELLOW}; }}
@@ -350,6 +359,28 @@ class MainWindow(QWidget):
 
         card_layout = QVBoxLayout(self.card)
         card_layout.setContentsMargins(36, 32, 36, 32)
+        card_layout.setSpacing(16)
+        self.update_info: updater.UpdateInfo | None = None
+        self.update_cancel = threading.Event()
+        self._bg_tasks: list[Task] = []
+        self.update_banner = QFrame()
+        self.update_banner.setObjectName("updateBanner")
+        bl = QHBoxLayout(self.update_banner)
+        bl.setContentsMargins(14, 10, 10, 10)
+        self.update_text = label("", "updateText", wrap=True)
+        self.update_btn = QPushButton("Atualizar")
+        self.update_btn.setObjectName("updBtn")
+        self.update_btn.setCursor(Qt.PointingHandCursor)
+        self.update_btn.clicked.connect(self.on_update)
+        self.update_later = QPushButton("Depois")
+        self.update_later.setObjectName("updLater")
+        self.update_later.setCursor(Qt.PointingHandCursor)
+        self.update_later.clicked.connect(self._hide_update_banner)
+        bl.addWidget(self.update_text, 1)
+        bl.addWidget(self.update_btn)
+        bl.addWidget(self.update_later)
+        self.update_banner.hide()
+        card_layout.addWidget(self.update_banner)
         self.stack = QStackedWidget()
         card_layout.addWidget(self.stack)
 
@@ -428,6 +459,11 @@ class MainWindow(QWidget):
                 align=Qt.AlignHCenter,
             )
         )
+        self.version_btn = QPushButton(f"v{__version__}  ·  Verificar atualizações")
+        self.version_btn.setObjectName("link")
+        self.version_btn.setCursor(Qt.PointingHandCursor)
+        self.version_btn.clicked.connect(lambda: self._check_updates(manual=True))
+        lay.addWidget(self.version_btn, alignment=Qt.AlignHCenter)
         return page
 
     def _build_loading(self) -> QWidget:
@@ -887,7 +923,112 @@ class MainWindow(QWidget):
         self.res_again.setText("Voltar")
         self._show(self.p_result)
 
+    # ----- atualizações -----------------------------------------------------
+    def _keep(self, task: Task) -> Task:
+        """Guarda a referência da tarefa até ela terminar (senão o Qt a destrói no meio)."""
+        self._bg_tasks.append(task)
+        task.finished.connect(lambda t=task: self._bg_tasks.remove(t) if t in self._bg_tasks else None)
+        return task
+
+    def _reset_version_btn(self) -> None:
+        self.version_btn.setText(f"v{__version__}  ·  Verificar atualizações")
+
+    def _check_updates(self, manual: bool = False) -> None:
+        if not manual and os.environ.get("TEASERTUBE_NO_UPDATE_CHECK"):
+            return
+        if manual:
+            self.version_btn.setText("Verificando…")
+        task = self._keep(Task(lambda _t: updater.check(), self))
+        task.finished_ok.connect(lambda upd: self._on_update_checked(upd, manual))
+        task.failed.connect(lambda _msg: self._on_update_check_failed(manual))
+        task.start()
+
+    def _on_update_checked(self, upd, manual: bool) -> None:
+        if upd:
+            self._show_update(upd)
+            self._reset_version_btn()
+        elif manual:
+            self.version_btn.setText("✓ Você já está na versão mais recente")
+            QTimer.singleShot(5000, self._reset_version_btn)
+
+    def _on_update_check_failed(self, manual: bool) -> None:
+        if manual:  # na verificação automática falhar em silêncio é o certo (sem internet, por exemplo)
+            self.version_btn.setText("Não foi possível verificar agora")
+            QTimer.singleShot(5000, self._reset_version_btn)
+
+    def _show_update(self, upd: updater.UpdateInfo) -> None:
+        self.update_info = upd
+        auto = getattr(sys, "frozen", False) and upd.can_auto_install
+        self.update_text.setText(f"Nova versão {upd.version} disponível!")
+        self.update_btn.setText("Atualizar" if auto else "Ver novidades")
+        self.update_btn.setEnabled(True)
+        self.update_later.show()
+        self.update_banner.show()
+        self._fit_stack()
+
+    def _hide_update_banner(self) -> None:
+        self.update_banner.hide()
+        self._fit_stack()
+
+    def on_update(self) -> None:
+        upd = self.update_info
+        if not upd:
+            return
+        if not (getattr(sys, "frozen", False) and upd.can_auto_install):
+            QDesktopServices.openUrl(QUrl(upd.page_url))  # versão pelo código ou sem checksum: abre a página
+            return
+        if self.task and self.task.isRunning():
+            self.update_text.setText("Termine o download atual antes de atualizar.")
+            return
+        self.update_btn.setEnabled(False)
+        self.update_later.hide()
+        self.update_text.setText("Baixando a atualização… 0%")
+        folder = Path.home() / "Downloads" if sys.platform.startswith("linux") else Path(tempfile.gettempdir())
+        dest = folder / upd.asset_name
+        self.update_cancel = threading.Event()
+        cancel = self.update_cancel
+
+        def work(task: Task):
+            return str(
+                updater.download(upd.asset_url, dest, upd.sha256, lambda d, t: task.progress.emit((d, t)), cancel)
+            )
+
+        task = self._keep(Task(work, self))
+        task.progress.connect(self._on_update_progress)
+        task.finished_ok.connect(self._on_update_downloaded)
+        task.failed.connect(self._on_update_failed)
+        task.start()
+
+    def _on_update_progress(self, pair) -> None:
+        done, total = pair
+        pct = f"{int(done * 100 / total)}%" if total else core.fmt_size(done)
+        self.update_text.setText(f"Baixando a atualização… {pct}")
+        self._fit_stack()
+
+    def _on_update_downloaded(self, path: str) -> None:
+        if sys.platform.startswith("win"):
+            self.update_text.setText("Instalador aberto. O TeaserTube vai fechar para atualizar.")
+            os.startfile(path)  # type: ignore[attr-defined]
+            QTimer.singleShot(1500, QApplication.quit)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+            self.update_text.setText("Abra o instalador e arraste o TeaserTube para Aplicativos, substituindo o atual.")
+        else:
+            open_folder(str(Path(path).parent))
+            self.update_text.setText(f"Baixado em {Path(path).parent}. Extraia o arquivo e substitua o app atual.")
+        self._fit_stack()
+
+    def _on_update_failed(self, msg: str) -> None:
+        self.update_text.setText((msg or "Não foi possível atualizar.") + " Abra a página para baixar à mão.")
+        if self.update_info:
+            self.update_info.sha256 = None  # o botão passa a abrir a página da release
+        self.update_btn.setText("Abrir página")
+        self.update_btn.setEnabled(True)
+        self.update_later.show()
+        self._fit_stack()
+
     def closeEvent(self, event) -> None:
+        self.update_cancel.set()
         self.cancel.set()
         if self.task and self.task.isRunning():
             self.task.wait(3000)
@@ -903,6 +1044,7 @@ def main() -> None:
     app.setWindowIcon(svg_icon("icon.svg"))
     win = MainWindow()
     win.show()
+    QTimer.singleShot(1500, win._check_updates)  # em segundo plano; falha em silêncio sem internet
     sys.exit(app.exec())
 
 

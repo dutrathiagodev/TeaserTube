@@ -35,8 +35,14 @@ Funciona nas distribuições de 2020 em diante (Ubuntu 20.04+, Debian 11+, Fedor
 - Vídeo em MP4 (melhor qualidade, 1080p, 720p, 480p ou 360p) ou áudio em MP3
 - Playlists: escolha quais vídeos baixar; cada playlist vai para a própria pasta
 - Mostra qual vídeo falhou e por quê, e tenta de novo sozinho quando é falha passageira
+- Funciona com vídeos de várias horas: mostra o tamanho estimado e avisa se faltar espaço no disco
+- Avisa quando sai uma versão nova e atualiza com um clique
 - Não precisa instalar Python, ffmpeg nem mais nada
 
 ⭐ **Gostou?** [Deixe uma estrela no repositório](https://github.com/dutrathiagodev/TeaserTube), ajuda muito o projeto!
+
+### Conferir o download
+
+Cada versão traz o `SHA256SUMS.txt` e um atestado de origem. Veja como conferir no [SECURITY.md](https://github.com/dutrathiagodev/TeaserTube/blob/main/SECURITY.md).
 
 Dúvidas ou problemas? Abra uma [issue](https://github.com/dutrathiagodev/TeaserTube/issues).

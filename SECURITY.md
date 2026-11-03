@@ -8,8 +8,12 @@ Achou uma falha de segurança? **Não abra uma issue pública.** Use o botão
 
 ## O que o TeaserTube faz (e não faz)
 
-- Só se conecta à internet para falar com o site do vídeo (via [yt-dlp](https://github.com/yt-dlp/yt-dlp))
-  e para baixar a miniatura (apenas `https`, no máximo 5 MB).
+- Só se conecta à internet para falar com o site do vídeo (via [yt-dlp](https://github.com/yt-dlp/yt-dlp)),
+  para baixar a miniatura (apenas `https`, no máximo 5 MB) e para perguntar ao GitHub
+  (`api.github.com`) se há versão nova. Essa consulta não envia dados seus; para desligá-la,
+  defina `TEASERTUBE_NO_UPDATE_CHECK=1`.
+- A atualização só é aberta depois de conferir o SHA-256 do arquivo com o `SHA256SUMS.txt` da release,
+  e só aceita arquivos do endereço oficial das releases deste repositório.
 - Não coleta dados, não tem telemetria, não pede login nem senha.
 - Grava arquivos só na pasta de downloads que você escolher.
 - Textos vindos da internet (títulos dos vídeos) são sempre mostrados como texto puro, nunca como HTML.

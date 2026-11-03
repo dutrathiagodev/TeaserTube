@@ -171,6 +171,20 @@ Veja como conferir o seu download e como reportar um problema em [SECURITY.md](S
 Pull requests são bem-vindos. O código fica em `teasertube/` (`core.py` cuida dos downloads,
 `gui.py` da interface). Os scripts em `tools/` regeneram o logo, os ícones e as imagens deste README.
 
+## Atualizações
+
+Ao abrir, o TeaserTube verifica no GitHub se saiu uma versão nova. Se saiu, aparece um aviso no topo com o
+botão **Atualizar** (e também dá para verificar à mão, no link "Verificar atualizações" no rodapé):
+
+- **Windows:** baixa o instalador, confere o checksum e abre; o app fecha para atualizar.
+- **Mac:** baixa o `.dmg` e abre; arraste o TeaserTube para *Aplicativos* para substituir o antigo.
+- **Linux:** baixa o arquivo para a pasta *Downloads*; extraia e substitua o app antigo.
+- **Rodando pelo código:** o aviso abre a página da release; atualize com `git pull`.
+
+O arquivo só é aberto se o SHA-256 bater com o do `SHA256SUMS.txt` oficial da release; se não bater, é descartado.
+O app só conversa com `api.github.com` para isso e não envia nenhum dado seu.
+Para desligar a verificação automática, defina a variável de ambiente `TEASERTUBE_NO_UPDATE_CHECK=1`.
+
 ## Limitações
 
 - **Lives que ainda estão no ar** não podem ser baixadas: o app avisa e pede para esperar a transmissão terminar para baixar a gravação.
