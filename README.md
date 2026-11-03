@@ -16,18 +16,32 @@ Feito com [yt-dlp](https://github.com/yt-dlp/yt-dlp) e PySide6.
 
 ## Como usar
 
-Requer Python 3.9 ou mais novo.
+Requer Python 3.9 ou mais novo (no Windows, marque "Add Python to PATH" ao instalar).
+Baixe ou clone o repositório e dê **dois cliques** no launcher do seu sistema:
+
+| Sistema | Arquivo |
+|---------|---------|
+| Windows | `TeaserTube.bat` |
+| macOS   | `TeaserTube.command` |
+| Linux   | `TeaserTube.sh` (ou `./TeaserTube.sh` no terminal) |
+
+Na **primeira vez** ele cria o ambiente, instala as dependências (leva um minuto) e coloca
+um atalho **TeaserTube**, com o logo, na sua área de trabalho. Depois é só abrir pelo atalho.
+
+- Se mudar a pasta do projeto de lugar, recrie o atalho com `python -m teasertube.shortcut`
+  (usando o Python do `.venv`).
+- No Linux, se o clique duplo no `.sh` abrir um editor, ajuste o gerenciador de arquivos para
+  "executar arquivos de texto" ou rode `./TeaserTube.sh` uma vez no terminal.
+- Se a janela não abrir no Linux com erro do Qt `xcb`: `sudo apt install libxcb-cursor0`.
+
+### Manualmente
 
 ```bash
-git clone <url-do-repositorio>
-cd TeaserTube
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python -m teasertube
 ```
-
-No Linux, se a janela não abrir com erro do Qt `xcb`, instale: `sudo apt install libxcb-cursor0`.
 
 ## Gerar executável (opcional)
 
