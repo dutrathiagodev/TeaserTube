@@ -179,6 +179,7 @@ def _thumb(info: dict) -> Optional[str]:
     return info.get("thumbnail") or (thumbs[-1].get("url") if thumbs else None)
 
 
+TINY = 64 * 1024  # abaixo disto o arquivo é só um cabeçalho
 FORMAT_SORT = ["res", "ext:mp4:m4a"]
 
 
@@ -467,25 +468,35 @@ def download(
             return f"Vídeo {pos + 1} de {total_items}" + (f" · {title}" if title else "")
         return "Baixando…"
 
+    # Vídeo e áudio chegam em arquivos separados: cada um vale uma parte da barra, que nunca passa de 100%.
+    # (Não usa o tamanho estimado: as estimativas do YouTube erram bastante; o tamanho real de cada arquivo é exato.)
+    streams_expected = 2 if (mode == "video" and ffmpeg_ok) else 1
+    shown = [0.0]  # maior valor já mostrado: a barra nunca anda para trás
+
     def hook(d: dict) -> None:
         if cancel.is_set():
             raise Cancelled()
         pos, pi = position(d)
-        n_streams = len((d.get("info_dict") or {}).get("requested_formats") or [1])
         if d["status"] == "downloading":
             total = d.get("total_bytes") or d.get("total_bytes_estimate")
-            frac = (d.get("downloaded_bytes") or 0) / total if total else 0
-            overall = (pos + (streams_done.get(pi, 0) + frac) / n_streams) / total_items
+            current = d.get("downloaded_bytes") or 0
+            finished = streams_done.get(pi, 0)
+            # Pedaços minúsculos (cabeçalhos de poucos bytes) não contam: dariam 100% logo no início.
+            frac = current / total if total and total >= TINY else 0
+            item = (finished + frac) / max(streams_expected, finished + 1)
+            overall = min(0.999, (pos + min(item, 0.999)) / total_items)
+            overall = shown[0] = max(overall, shown[0])
             bits = []
             if total:
-                bits.append(f"{fmt_size(d.get('downloaded_bytes') or 0)} de {fmt_size(total)}")
+                bits.append(f"{fmt_size(current)} de {fmt_size(total)}")
             if d.get("speed"):
                 bits.append(f"{fmt_size(d['speed'])}/s")
             if d.get("eta") is not None:
                 bits.append(f"faltam {fmt_eta(d['eta'])}")
-            on_progress(Progress(label(d), overall * 100, "  ·  ".join(b for b in bits if b)))
+            on_progress(Progress(label(d), overall * 100, "  ·  ".join(bits)))
         elif d["status"] == "finished":
-            streams_done[pi] = streams_done.get(pi, 0) + 1
+            if (d.get("total_bytes") or d.get("downloaded_bytes") or 0) >= TINY:
+                streams_done[pi] = streams_done.get(pi, 0) + 1
 
     def pp_hook(d: dict) -> None:
         if cancel.is_set():
@@ -531,6 +542,7 @@ def download(
             order[:] = list(retryable.values())
             total_items = len(order)
             streams_done.clear()
+            shown[0] = 0.0
             log.errors.clear()
             run(order)
             failures = [f for f in failures if f.title not in retryable] + _failures(log.errors, info)
