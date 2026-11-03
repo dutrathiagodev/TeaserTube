@@ -58,20 +58,29 @@ Marque só os vídeos que quiser. Cada playlist vai para a própria pasta, numer
 
 Na página de [Releases](https://github.com/dutrathiagodev/TeaserTube/releases), baixe o arquivo do seu sistema:
 
-| Sistema | Arquivo | Como abrir |
-|---------|---------|------------|
-| Windows 10/11 (64 bits) | `TeaserTube-windows-x64.zip` | **Extraia o zip** e abra `TeaserTube.exe` |
-| Mac com chip Apple (M1 ou mais novo) | `TeaserTube-macos-apple-silicon.zip` | Extraia e abra `TeaserTube.app` |
-| Mac com processador Intel | `TeaserTube-macos-intel.zip` | Extraia e abra `TeaserTube.app` |
+| Sistema | Arquivo | Como instalar |
+|---------|---------|---------------|
+| Windows 10/11 (64 bits) | `TeaserTube-windows-x64-setup.exe` | Dê dois cliques e siga o instalador (não precisa de administrador) |
+| Mac com chip Apple (M1 ou mais novo) | `TeaserTube-macos-apple-silicon.dmg` | Abra e arraste o TeaserTube para *Aplicativos* |
+| Mac com processador Intel | `TeaserTube-macos-intel.dmg` | Abra e arraste o TeaserTube para *Aplicativos* |
 | Linux 64 bits (Intel/AMD) | `TeaserTube-linux-x64.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
 | Linux ARM64 (Raspberry Pi etc.) | `TeaserTube-linux-arm64.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
 
-> Extraia tudo antes de abrir: o app precisa dos arquivos que vêm na mesma pasta.
-> O app não é assinado digitalmente, então o Windows (SmartScreen) e o macOS (Gatekeeper) podem
-> avisar na primeira vez. No Windows, clique em *Mais informações > Executar assim mesmo*;
-> no macOS, clique com o botão direito no app e escolha *Abrir*.
+### O Windows mostrou uma tela azul ("O Windows protegeu o computador")?
 
-**Linux:** os arquivos são compilados numa base antiga e abrem nas distribuições de 2020 em diante
+É o **Microsoft Defender SmartScreen**. Ele aparece para qualquer programa novo que ainda não tem
+assinatura digital, mesmo sendo seguro. O TeaserTube é open source: todo o código está neste repositório
+e os arquivos são gerados automaticamente pelo GitHub Actions, sem passar pela máquina de ninguém.
+
+Para continuar: clique em **Mais informações** e depois em **Executar assim mesmo**. Só na primeira vez.
+
+### No Mac o sistema bloqueou o app?
+
+Clique com o botão direito no TeaserTube (em *Aplicativos*) e escolha **Abrir**. Só na primeira vez.
+
+### Linux
+
+Os arquivos são compilados numa base antiga e abrem nas distribuições de 2020 em diante
 (Ubuntu 20.04+, Debian 11+, Fedora, Arch, openSUSE, Mint...). Se não abrir, instale a biblioteca
 gráfica que falta: `sudo apt install libxcb-cursor0` (Debian/Ubuntu) ou `sudo dnf install xcb-util-cursor` (Fedora).
 

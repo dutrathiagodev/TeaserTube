@@ -22,19 +22,19 @@ jobs:
             sep: ";"
             icon: teasertube/assets/icon.ico
             exe: dist/TeaserTube/TeaserTube.exe
-            asset: TeaserTube-windows-x64.zip
+            asset: TeaserTube-windows-x64-setup.exe
           - name: macos-apple-silicon
             os: macos-latest
             sep: ":"
             icon: teasertube/assets/icon.icns
             exe: dist/TeaserTube.app/Contents/MacOS/TeaserTube
-            asset: TeaserTube-macos-apple-silicon.zip
+            asset: TeaserTube-macos-apple-silicon.dmg
           - name: macos-intel
             os: macos-15-intel
             sep: ":"
             icon: teasertube/assets/icon.icns
             exe: dist/TeaserTube.app/Contents/MacOS/TeaserTube
-            asset: TeaserTube-macos-intel.zip
+            asset: TeaserTube-macos-intel.dmg
           # Linux é compilado numa base antiga (Debian 11, glibc 2.31) para abrir
           # em praticamente qualquer distribuição de 2020 em diante.
           - name: linux-x64
@@ -81,15 +81,27 @@ jobs:
         shell: bash
         run: |
           "${{ matrix.exe }}" --diagnostico || [ "${{ runner.os }}" = "Windows" ]
-      - name: Compactar
+      - name: Instalador (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          $version = python -c "import teasertube; print(teasertube.__version__)"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" installer\TeaserTube.iss
+      - name: Imagem de disco (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          mkdir dmg
+          ditto dist/TeaserTube.app dmg/TeaserTube.app
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname TeaserTube -srcfolder dmg -ov -format UDZO "${{ matrix.asset }}"
+      - name: Compactar (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           cd dist
-          case "${{ runner.os }}" in
-            Windows) 7z a "../${{ matrix.asset }}" TeaserTube ;;
-            macOS)   ditto -c -k --keepParent TeaserTube.app "../${{ matrix.asset }}" ;;
-            Linux)   tar -czf "../${{ matrix.asset }}" TeaserTube ;;
-          esac
+          tar -czf "../${{ matrix.asset }}" TeaserTube
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
