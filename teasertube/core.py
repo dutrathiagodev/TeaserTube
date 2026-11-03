@@ -166,6 +166,10 @@ def _base_opts() -> dict:
         "no_warnings": True,
         "noprogress": True,
         "windowsfilenames": True,
+        "retries": 10,
+        "fragment_retries": 10,
+        "extractor_retries": 3,
+        "socket_timeout": 30,
     }
     runtimes = js_runtimes()
     if runtimes:
@@ -264,6 +268,10 @@ class _Log:
         self.errors.append(str(msg))
 
 
+_PERMANENT = (
+    "privado", "removido", "apagado", "membros", "direitos autorais", "país", "idade", "não começou",
+)
+
 _VIDEO_ID = re.compile(r"\[[\w:]+\]\s+([\w-]{11}):")
 
 
@@ -322,7 +330,7 @@ def download(
         opts["format_sort"] = ["res", "ext:mp4:m4a"]
         opts["merge_output_format"] = "mp4"
 
-    total_items = len(order)
+    total_items = total_all = len(order)
     streams_done: dict[int, int] = {}
     files: list[str] = []
 
@@ -367,21 +375,46 @@ def download(
     opts["progress_hooks"] = [hook]
     opts["postprocessor_hooks"] = [pp_hook]
 
-    try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.add_post_hook(files.append)
-            ydl.download([info.url])
-    except Exception as exc:
-        if cancel.is_set() or isinstance(exc, Cancelled):
-            raise Cancelled() from exc
-        raise
+    def run(items: Optional[list[int]]) -> None:
+        run_opts = dict(opts)
+        if items:
+            run_opts["playlist_items"] = ",".join(str(i) for i in items)
+        try:
+            with yt_dlp.YoutubeDL(run_opts) as ydl:
+                ydl.add_post_hook(files.append)
+                ydl.download([info.url])
+        except Exception as exc:
+            if cancel.is_set() or isinstance(exc, Cancelled):
+                raise Cancelled() from exc
+            raise
+        if cancel.is_set():
+            raise Cancelled()
+
+    run(selected if is_playlist else None)
+    failures = _failures(log.errors, info)
+
+    if is_playlist and failures:
+        # Falhas passageiras (conexão, 403...) costumam passar na segunda tentativa.
+        by_title = {e.title: e.index for e in info.entries}
+        retryable = {
+            f.title: by_title[f.title]
+            for f in failures
+            if f.title in by_title and not any(k in f.reason for k in _PERMANENT)
+        }
+        if retryable:
+            on_progress(Progress("Tentando de novo os vídeos que falharam…", None, ""))
+            order[:] = list(retryable.values())
+            total_items = len(order)
+            streams_done.clear()
+            log.errors.clear()
+            run(order)
+            failures = [f for f in failures if f.title not in retryable] + _failures(log.errors, info)
+
     if cancel.is_set():
         raise Cancelled()
-
-    failures = _failures(log.errors, info)
     if not files:
         raise RuntimeError(failures[0].reason if failures else "Nenhum arquivo foi baixado.")
-    missing = total_items - len(files) - len(failures)
+    missing = total_all - len(files) - len(failures)
     if missing > 0:  # falhou sem mensagem de erro
         failures.append(Failure(f"{missing} vídeo(s)", "Não foi possível baixar."))
     return Result(files=files, failures=failures, folder=os.path.dirname(files[0]))
