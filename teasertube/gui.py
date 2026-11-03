@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -128,6 +129,17 @@ def open_folder(path: str) -> None:
         subprocess.Popen(["open", path])
     else:
         subprocess.Popen(["xdg-open", path])
+
+
+def free_bytes(path: str) -> int:
+    """Espaço livre no disco da pasta (sobe até a pasta existente mais próxima)."""
+    p = Path(path).expanduser()
+    while not p.exists() and p != p.parent:
+        p = p.parent
+    try:
+        return shutil.disk_usage(p).free
+    except OSError:
+        return 0
 
 
 def fmt_duration(seconds) -> str:
@@ -455,6 +467,10 @@ class MainWindow(QWidget):
         top.addLayout(meta, 1)
         lay.addLayout(top)
 
+        self.live_note = label("", "error", wrap=True)
+        self.live_note.hide()
+        lay.addWidget(self.live_note)
+
         # Playlist: lista de vídeos com caixas de seleção
         self.playlist_box = QWidget()
         pl = QVBoxLayout(self.playlist_box)
@@ -493,10 +509,14 @@ class MainWindow(QWidget):
         self.fmt_group.idToggled.connect(self._format_changed)
         fmt_row.addSpacing(8)
         self.quality = Combo()
-        self.quality.setMinimumWidth(190)
+        self.quality.setMinimumWidth(230)
+        self.quality.currentIndexChanged.connect(self._update_size_hint)
         fmt_row.addWidget(self.quality)
         fmt_row.addStretch(1)
         lay.addLayout(fmt_row)
+
+        self.size_hint = label("", "muted", wrap=True)
+        lay.addWidget(self.size_hint)
 
         folder_row = QHBoxLayout()
         folder_row.addWidget(label("Salvar em", "muted"))
@@ -664,25 +684,70 @@ class MainWindow(QWidget):
 
         self._fill_qualities()
         self.folder_label.setText(self._elide(self.folder))
+        self.live_note.setVisible(info.is_ongoing)
+        if info.is_ongoing:
+            self.live_note.setText(
+                "Esta transmissão ainda não terminou."
+                if info.live_status == "is_live"
+                else "Esta transmissão ainda não começou."
+            )
+            self.live_note.setText(self.live_note.text() + " Quando acabar, volte aqui e baixe a gravação.")
+        if not is_pl:
+            self.download_btn.setEnabled(not info.is_ongoing)
         self._show(self.p_options)
 
     def _fill_qualities(self) -> None:
+        self.quality.blockSignals(True)
         self.quality.clear()
+        info = self.info
         if self.btn_audio.isChecked():
-            self.quality.addItem("MP3 · 192 kbps")
+            size = core.fmt_size(core.estimate_bytes(info, "audio", None)) if info else ""
+            self.quality.addItem("MP3 · 192 kbps" + (f" · ~{size}" if size else ""))
             self.quality.setEnabled(False)
-            return
-        self.quality.setEnabled(True)
-        self.quality.addItem("Melhor qualidade", None)
-        if self.info and self.info.kind == "video" and self.info.heights:
-            for h in self.info.heights:
-                if h >= 144:
-                    self.quality.addItem(f"{h}p", h)
         else:
-            for h in (1080, 720, 480, 360):
-                self.quality.addItem(f"{h}p", h)
-        if self.quality.count() > 1:
-            self.quality.setCurrentIndex(0)
+            self.quality.setEnabled(True)
+
+            def add(text: str, height) -> None:
+                size = core.fmt_size(core.estimate_bytes(info, "video", height)) if info else ""
+                self.quality.addItem(text + (f" · ~{size}" if size else ""), height)
+
+            add("Melhor qualidade", None)
+            if info and info.kind == "video" and info.heights:
+                for h in info.heights:
+                    if h >= 144:
+                        add(f"{h}p", h)
+            else:
+                for h in (1080, 720, 480, 360):
+                    add(f"{h}p", h)
+        self.quality.blockSignals(False)
+        self._update_size_hint()
+
+    def _update_size_hint(self, *_args) -> None:
+        """Mostra o tamanho estimado e avisa se o disco não aguenta."""
+        info = self.info
+        if not info or info.kind != "video":
+            self.size_hint.setText("")
+            return
+        mode = "audio" if self.btn_audio.isChecked() else "video"
+        height = self.quality.currentData() if mode == "video" else None
+        estimate = core.estimate_bytes(info, mode, height)
+        free = free_bytes(self.folder)
+        if not estimate:
+            self.size_hint.setText(f"Espaço livre na pasta: {core.fmt_size(free)}")
+            self.size_hint.setStyleSheet("")
+            return
+        needed = core.disk_needed(estimate)
+        if free and free < needed:
+            self.size_hint.setText(
+                f"Espaço insuficiente: precisa de ~{core.fmt_size(needed)} livres "
+                f"(durante a junção de vídeo e áudio o arquivo fica duplicado) e a pasta tem {core.fmt_size(free)}."
+            )
+            self.size_hint.setStyleSheet("color:#ff8a8a;")
+        else:
+            self.size_hint.setText(
+                f"Tamanho estimado: ~{core.fmt_size(estimate)}  ·  espaço livre: {core.fmt_size(free)}"
+            )
+            self.size_hint.setStyleSheet("")
 
     def _format_changed(self, _id: int, checked: bool) -> None:
         if checked:
@@ -717,6 +782,7 @@ class MainWindow(QWidget):
             self.folder = chosen
             self.settings.setValue("folder", chosen)
             self.folder_label.setText(self._elide(chosen))
+            self._update_size_hint()
 
     def on_back(self) -> None:
         self._show(self.p_home)
@@ -733,6 +799,14 @@ class MainWindow(QWidget):
         mode = "audio" if self.btn_audio.isChecked() else "video"
         height = self.quality.currentData() if mode == "video" else None
         selected = self._selected() if info.kind == "playlist" else None
+        estimate = core.estimate_bytes(info, mode, height)
+        if estimate and free_bytes(self.folder) < core.disk_needed(estimate):
+            self._on_fail(
+                f"Espaço insuficiente no disco: o download precisa de ~{core.fmt_size(core.disk_needed(estimate))} "
+                f"livres e a pasta tem {core.fmt_size(free_bytes(self.folder))}. "
+                "Escolha outra pasta (botão Alterar) ou uma qualidade menor."
+            )
+            return
         os.makedirs(self.folder, exist_ok=True)
         self.cancel = threading.Event()
         cancel = self.cancel

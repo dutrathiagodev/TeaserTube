@@ -51,7 +51,8 @@ Marque só os vídeos que quiser. Cada playlist vai para a própria pasta, numer
 </table>
 
 - **Nada para instalar além do Python:** o ffmpeg e o runtime JS vêm junto, como pacotes pip.
-- **Progresso e cancelar:** acompanhe a velocidade e o tempo restante.
+- **Vídeos longos e lives gravadas:** funciona com vídeos de várias horas. Mostra o tamanho estimado de cada qualidade, avisa antes de começar se o disco não tem espaço e baixa em partes simultâneas para ir mais rápido.
+- **Progresso e cancelar:** acompanhe o quanto já baixou, a velocidade e o tempo restante.
 - **Seus arquivos ficam à mão:** por padrão, na pasta `downloads/` do próprio app (dá para trocar).
 
 <p align="center">
@@ -169,6 +170,12 @@ Veja como conferir o seu download e como reportar um problema em [SECURITY.md](S
 
 Pull requests são bem-vindos. O código fica em `teasertube/` (`core.py` cuida dos downloads,
 `gui.py` da interface). Os scripts em `tools/` regeneram o logo, os ícones e as imagens deste README.
+
+## Limitações
+
+- **Lives que ainda estão no ar** não podem ser baixadas: o app avisa e pede para esperar a transmissão terminar para baixar a gravação.
+- Em pen drives ou discos formatados como **FAT32**, arquivos acima de 4 GB não cabem; use um disco NTFS, exFAT, ext4 ou APFS.
+- Vídeos de várias horas em 1080p ou mais ocupam muitos gigabytes; durante a junção de vídeo e áudio o espaço usado dobra.
 
 ## Aviso legal
 
