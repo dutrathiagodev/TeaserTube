@@ -744,6 +744,7 @@ class MainWindow(QWidget):
 def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
+    app.setDesktopFileName("teasertube")
     app.setStyle("Fusion")
     app.setStyleSheet(STYLE)
     app.setWindowIcon(svg_icon("icon.svg"))

@@ -18,4 +18,4 @@ teasertube = "teasertube.gui:main"
 include = ["teasertube*"]
 
 [tool.setuptools.package-data]
-teasertube = ["assets/*.svg"]
+teasertube = ["assets/*"]
