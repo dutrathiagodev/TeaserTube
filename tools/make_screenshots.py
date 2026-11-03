@@ -3,6 +3,7 @@
 Uso (na raiz do repositório):  QT_QPA_PLATFORM=offscreen python tools/make_screenshots.py
 Os dados são fictícios; nenhuma miniatura real é usada.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -41,7 +42,7 @@ def main() -> None:
     w.folder = "~/Downloads/TeaserTube"
     w.resize(1000, 680)
     w.show()
-    app.processEvents()
+    app.processEvents(); app.processEvents()
     w.grab().save(str(OUT / "home.png"))
 
     info = core.MediaInfo(
@@ -54,14 +55,17 @@ def main() -> None:
     w._on_info((info, fake_thumb()))
     for i in (6, 7):
         w.pl_list.item(i).setCheckState(gui.Qt.Unchecked)
-    app.processEvents()
+    app.processEvents(); app.processEvents()
     w.grab().save(str(OUT / "playlist.png"))
 
+    app.processEvents()
     w._on_progress(core.Progress("Vídeo 3 de 6 · Condicionais", 47.0, "4,2 MB/s  ·  faltam 12s"))
     w._show(w.p_progress)
-    app.processEvents()
+    app.processEvents(); app.processEvents()
     w.grab().save(str(OUT / "progress.png"))
     print("imagens em", OUT)
+    sys.stdout.flush()
+    os._exit(0)  # evita um aviso inofensivo do Qt ao encerrar
 
 
 if __name__ == "__main__":

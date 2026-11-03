@@ -8,7 +8,7 @@ import threading
 import urllib.request
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QThread, Signal
+from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -310,17 +310,21 @@ class MainWindow(QWidget):
 
     # ----- navegação --------------------------------------------------------
     def _fit_stack(self, _index: int = 0) -> None:
-        """A altura do cartão acompanha só a página visível."""
-        for i in range(self.stack.count()):
-            current = i == self.stack.currentIndex()
-            self.stack.widget(i).setSizePolicy(
-                QSizePolicy.Preferred, QSizePolicy.Preferred if current else QSizePolicy.Ignored
-            )
-        self.card.adjustSize()
+        """A altura do cartão acompanha só a página visível (o QStackedWidget usa a maior)."""
+        page = self.stack.currentWidget()
+        lay = page.layout()
+        width = self.card.width() - 72
+        height = lay.totalHeightForWidth(width) if lay.hasHeightForWidth() else 0
+        self.stack.setFixedHeight(max(height, lay.totalSizeHint().height()))
+        card_layout = self.card.layout()
+        card_layout.invalidate()
+        card_layout.activate()
+        self.card.setFixedHeight(card_layout.sizeHint().height())
 
     def _show(self, page: QWidget) -> None:
         self.stack.setCurrentWidget(page)
         self._fit_stack()
+        QTimer.singleShot(0, self._fit_stack)  # reajusta depois que o Qt calcula os tamanhos
 
     # ----- páginas ----------------------------------------------------------
     def _build_home(self) -> QWidget:
@@ -564,6 +568,7 @@ class MainWindow(QWidget):
         self.home_error.setText(msg)
         self.home_error.show()
         self._show(self.p_home)
+        self._fit_stack()
 
     def _on_info_error(self, msg: str) -> None:
         self._home_error(msg or "Não foi possível ler esse link.")
