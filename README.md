@@ -54,7 +54,24 @@ Marque só os vídeos que quiser. Cada playlist vai para a própria pasta, numer
 - **Progresso e cancelar:** acompanhe a velocidade e o tempo restante.
 - **Seus arquivos ficam à mão:** por padrão, na pasta `downloads/` do próprio app (dá para trocar).
 
-## Como usar
+## Baixar o app pronto (sem Python)
+
+Na página de [Releases](https://github.com/dutrathiagodev/TeaserTube/releases), baixe o arquivo do seu sistema:
+
+| Sistema | Arquivo | Como abrir |
+|---------|---------|------------|
+| Windows | `TeaserTube-windows.zip` | **Extraia o zip** e abra `TeaserTube.exe` |
+| macOS   | `TeaserTube-macos.zip`   | Extraia e abra `TeaserTube.app` |
+| Linux   | `TeaserTube-linux.tar.gz` | Extraia e execute `TeaserTube/TeaserTube` |
+
+> Extraia tudo antes de abrir: o app precisa dos arquivos que vêm na mesma pasta.
+> O app não é assinado digitalmente, então o Windows (SmartScreen) e o macOS (Gatekeeper) podem
+> avisar na primeira vez. No Windows, clique em *Mais informações > Executar assim mesmo*;
+> no macOS, clique com o botão direito no app e escolha *Abrir*.
+
+Prefere rodar pelo código? Veja abaixo.
+
+## Como usar (pelo código)
 
 Requer Python 3.9 ou mais novo (no Windows, marque "Add Python to PATH" ao instalar).
 Baixe o ZIP do repositório (botão verde **Code**) ou clone:
