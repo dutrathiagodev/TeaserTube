@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -12 548 124" width="548" height="124">
+  <g>
+    <path fill="#fff" d="M0,100V0H30L60,48L90,0H120V100H92V45L68,85H52L28,45V100Z"/>
+    <rect fill="#fff" x="134" y="0" width="28" height="100"/>
+    <path fill="#fff" fill-rule="evenodd" d="M176,0H224C264,0 284,22 284,50C284,78 264,100 224,100H176Z M204,24V76H222C240,76 256,66 256,50C256,34 240,24 222,24Z"/>
+    <rect fill="#fff" x="298" y="0" width="28" height="100"/>
+
+    <path fill="#fff" fill-rule="evenodd" d="M354,10H410A14 14 0 0 1 424,24V76A14 14 0 0 1 410,90H354A14 14 0 0 1 340,76V24A14 14 0 0 1 354,10Z M370,32L370,68L400,50Z"/>
+    <path fill="#fff" d="M431,40L460,20Q464,18 464,23V77Q464,82 460,80L431,60Z"/>
+    <path d="M485.8 37.7 A20 20 0 0 1 485.8 62.3" fill="none" stroke="#FFD60A" stroke-width="9" stroke-linecap="round"/>
+    <path d="M499.9 26.6 A38 38 0 0 1 499.9 73.4" fill="none" stroke="#FFD60A" stroke-width="9" stroke-linecap="round"/>
+    <path d="M514.1 15.5 A56 56 0 0 1 514.1 84.5" fill="none" stroke="#FFD60A" stroke-width="9" stroke-linecap="round"/>
+  </g>
+</svg>

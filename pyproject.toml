@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teasertube"
+version = "0.1.0"
+description = "Baixador de vídeos e áudios com interface gráfica (Windows, Linux e macOS)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = ["yt-dlp[default]", "PySide6", "imageio-ffmpeg", "deno"]
+
+[project.gui-scripts]
+teasertube = "teasertube.gui:main"
+
+[tool.setuptools.packages.find]
+include = ["teasertube*"]
+
+[tool.setuptools.package-data]
+teasertube = ["assets/*.svg"]
