@@ -23,6 +23,7 @@ class Entry:
     index: int  # posição na playlist (começa em 1)
     title: str
     duration: Optional[int] = None
+    id: str = ""
 
 
 @dataclass
@@ -47,10 +48,20 @@ class Progress:
 
 
 @dataclass
+class Failure:
+    title: str
+    reason: str
+
+
+@dataclass
 class Result:
     files: list[str]
-    failed: int = 0
+    failures: list[Failure] = field(default_factory=list)
     folder: str = ""
+
+    @property
+    def failed(self) -> int:
+        return len(self.failures)
 
 
 # --------------------------------------------------------------------------- #
@@ -116,16 +127,27 @@ def clean_error(exc: BaseException) -> str:
     msg = re.sub(r"^(ERROR:\s*)+", "", msg)
     msg = re.sub(r"^\[[^\]]+\]\s*[\w-]{6,}:\s*", "", msg)
     low = msg.lower()
-    if "not a bot" in low or "sign in to confirm" in low:
-        return "O YouTube pediu confirmação de que você não é um robô. Tente novamente mais tarde."
-    if "private video" in low:
-        return "Este vídeo é privado."
-    if "video unavailable" in low or "this video is not available" in low:
-        return "Vídeo indisponível."
-    if "unsupported url" in low:
-        return "Esse link não é suportado."
-    if "urlopen error" in low or "unable to download" in low and "network" in low:
-        return "Sem conexão com a internet."
+    rules = [
+        (("confirm your age", "age-restricted", "inappropriate for some users"),
+         "Vídeo com restrição de idade (exige login)."),
+        (("not a bot", "sign in to confirm"),
+         "O YouTube pediu confirmação de que você não é um robô. Tente novamente mais tarde."),
+        (("private video", "video is private", "is private"), "Este vídeo é privado."),
+        (("members-only", "join this channel"), "Vídeo exclusivo para membros do canal."),
+        (("copyright",), "Bloqueado por direitos autorais."),
+        (("not available in your country", "blocked it in your country"),
+         "Não está disponível no seu país."),
+        (("live event will begin", "premieres in"), "Transmissão ou estreia que ainda não começou."),
+        (("deleted video",), "O vídeo foi apagado."),
+        (("has been removed", "account associated", "no longer available"), "O vídeo foi removido."),
+        (("unavailable",), "Vídeo indisponível."),
+        (("unsupported url",), "Esse link não é suportado."),
+        (("urlopen error", "name resolution", "network is unreachable", "timed out"),
+         "Sem conexão com a internet."),
+    ]
+    for keys, text in rules:
+        if any(k in low for k in keys):
+            return text
     return msg.splitlines()[0] if msg else "Erro desconhecido."
 
 
@@ -176,7 +198,7 @@ def fetch_info(url: str, single: bool = False) -> MediaInfo:
         for i, e in enumerate(info.get("entries") or [], start=1):
             if not e:
                 continue
-            entries.append(Entry(i, e.get("title") or f"Vídeo {i}", e.get("duration")))
+            entries.append(Entry(i, e.get("title") or f"Vídeo {i}", e.get("duration"), e.get("id") or ""))
         thumb = _thumb(info)
         if not thumb:
             first = next((e for e in info.get("entries") or [] if e), None)
@@ -221,6 +243,43 @@ def _fmt_bytes(n: Optional[float]) -> str:
             return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
         n /= 1024
     return ""
+
+
+class _Log:
+    """Logger do yt-dlp: guarda só os erros (para dizer qual vídeo falhou e por quê)."""
+
+    def __init__(self) -> None:
+        self.errors: list[str] = []
+
+    def debug(self, msg: str) -> None:
+        pass
+
+    def info(self, msg: str) -> None:
+        pass
+
+    def warning(self, msg: str) -> None:
+        pass
+
+    def error(self, msg: str) -> None:
+        self.errors.append(str(msg))
+
+
+_VIDEO_ID = re.compile(r"\[[\w:]+\]\s+([\w-]{11}):")
+
+
+def _failures(errors: list[str], info: MediaInfo) -> list[Failure]:
+    titles = {e.id: e.title for e in info.entries if e.id}
+    seen, out = set(), []
+    for msg in errors:
+        m = _VIDEO_ID.search(_ANSI.sub("", msg))
+        vid = m.group(1) if m else ""
+        reason = clean_error(Exception(msg))
+        key = (vid, reason)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(Failure(titles.get(vid) or (f"Vídeo {vid}" if vid else "Vídeo desconhecido"), reason))
+    return out
 
 
 def download(
@@ -303,6 +362,8 @@ def download(
             pos, _ = position(d)
             on_progress(Progress(label(d), None, names.get(d["postprocessor"], "Finalizando…")))
 
+    log = _Log()
+    opts["logger"] = log
     opts["progress_hooks"] = [hook]
     opts["postprocessor_hooks"] = [pp_hook]
 
@@ -317,8 +378,10 @@ def download(
     if cancel.is_set():
         raise Cancelled()
 
-    failed = max(0, total_items - len(files))
+    failures = _failures(log.errors, info)
     if not files:
-        raise RuntimeError("Nenhum arquivo foi baixado.")
-    folder = os.path.dirname(files[0]) if files else outdir
-    return Result(files=files, failed=failed, folder=folder)
+        raise RuntimeError(failures[0].reason if failures else "Nenhum arquivo foi baixado.")
+    missing = total_items - len(files) - len(failures)
+    if missing > 0:  # falhou sem mensagem de erro
+        failures.append(Failure(f"{missing} vídeo(s)", "Não foi possível baixar."))
+    return Result(files=files, failures=failures, folder=os.path.dirname(files[0]))

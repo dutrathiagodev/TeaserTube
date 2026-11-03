@@ -1,6 +1,7 @@
 """Interface gráfica (PySide6): cola o link, escolhe as opções e baixa."""
 from __future__ import annotations
 
+import html
 import os
 import subprocess
 import sys
@@ -63,6 +64,8 @@ QLabel {{ color: #f4f4f5; background: transparent; }}
 #title {{ font-size: 24px; font-weight: 700; color: #ffffff; }}
 #bigTitle {{ font-size: 20px; font-weight: 700; }}
 #error {{ color: #ff6b6b; }}
+#failBox {{ background: #1d1719; border: 1px solid #4a2f35; border-radius: 12px; }}
+#failTitle {{ color: #ff9a9a; font-weight: 600; }}
 #inputRow {{ background: #1f1f26; border: 1px solid #2c2c35; border-radius: 16px; }}
 #inputRow:focus-within {{ border: 1px solid {YELLOW}; }}
 QLineEdit {{ background: transparent; border: none; color: #f4f4f5; font-size: 14px;
@@ -222,6 +225,42 @@ class Combo(QComboBox):
         x, y = self.width() - 22, self.height() / 2
         p.drawLine(QPointF(x - 4, y - 2), QPointF(x, y + 2))
         p.drawLine(QPointF(x, y + 2), QPointF(x + 4, y - 2))
+
+
+class StatusBadge(QWidget):
+    """Círculo com ✓ (ok), ! (aviso) ou ✕ (erro), desenhado à mão."""
+
+    COLORS = {"ok": "#FFD60A", "warn": "#FFB020", "error": "#FF6B6B"}
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.state = "ok"
+        self.setFixedSize(76, 76)
+
+    def set_state(self, state: str) -> None:
+        self.state = state
+        self.update()
+
+    def paintEvent(self, _event) -> None:
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        color = QColor(self.COLORS[self.state])
+        halo = QColor(color)
+        halo.setAlpha(40)
+        p.setPen(Qt.NoPen)
+        p.setBrush(halo)
+        p.drawEllipse(QRectF(0, 0, 76, 76))
+        p.setBrush(color)
+        p.drawEllipse(QRectF(10, 10, 56, 56))
+        p.setPen(QPen(QColor("#141414"), 6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        if self.state == "ok":
+            p.drawPolyline([QPointF(26, 39), QPointF(34, 47), QPointF(51, 29)])
+        elif self.state == "warn":
+            p.drawLine(QPointF(38, 25), QPointF(38, 42))
+            p.drawPoint(QPointF(38, 51))
+        else:
+            p.drawLine(QPointF(28, 28), QPointF(48, 48))
+            p.drawLine(QPointF(48, 28), QPointF(28, 48))
 
 
 class Task(QThread):
@@ -510,15 +549,27 @@ class MainWindow(QWidget):
     def _build_result(self) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setSpacing(12)
-        self.res_icon = label("", align=Qt.AlignHCenter)
-        self.res_icon.setStyleSheet(f"font-size:44px; font-weight:700; color:{YELLOW};")
-        lay.addWidget(self.res_icon)
+        lay.setSpacing(10)
+        self.res_badge = StatusBadge()
+        lay.addWidget(self.res_badge, alignment=Qt.AlignHCenter)
         self.res_title = label("", "bigTitle", align=Qt.AlignHCenter)
         lay.addWidget(self.res_title)
         self.res_msg = label("", "muted", wrap=True, align=Qt.AlignHCenter)
         lay.addWidget(self.res_msg)
-        lay.addSpacing(8)
+
+        self.fail_box = QFrame()
+        self.fail_box.setObjectName("failBox")
+        fl = QVBoxLayout(self.fail_box)
+        fl.setContentsMargins(16, 12, 16, 12)
+        fl.setSpacing(6)
+        self.fail_title = label("", "failTitle")
+        self.fail_list = label("", wrap=True)
+        self.fail_list.setTextFormat(Qt.RichText)
+        fl.addWidget(self.fail_title)
+        fl.addWidget(self.fail_list)
+        lay.addWidget(self.fail_box)
+
+        lay.addSpacing(6)
         row = QHBoxLayout()
         row.addStretch(1)
         self.res_open = QPushButton("Abrir pasta")
@@ -715,14 +766,27 @@ class MainWindow(QWidget):
 
     def _on_done(self, result: core.Result) -> None:
         self.result = result
-        self.res_icon.setText("✓")
-        self.res_icon.setStyleSheet(f"font-size:44px; font-weight:700; color:{YELLOW};")
-        self.res_title.setText("Download concluído!")
         n = len(result.files)
-        text = os.path.basename(result.files[0]) if n == 1 else f"{n} arquivos salvos"
-        if result.failed:
-            text += f"\n{result.failed} vídeo(s) não puderam ser baixados."
-        self.res_msg.setText(text + f"\n{result.folder}")
+        ok = not result.failures
+        self.res_badge.set_state("ok" if ok else "warn")
+        self.res_title.setText("Download concluído!" if ok else "Concluído, mas com avisos")
+        what = os.path.basename(result.files[0]) if n == 1 else f"{n} arquivos salvos"
+        self.res_msg.setText(f"{what}\n{result.folder}")
+
+        self.fail_box.setVisible(not ok)
+        if not ok:
+            k = len(result.failures)
+            self.fail_title.setText(
+                "1 vídeo não foi baixado" if k == 1 else f"{k} vídeos não foram baixados"
+            )
+            lines = [
+                f"• <b>{html.escape(f.title)}</b><br/>"
+                f"<span style='color:#b4b4be'>&nbsp;&nbsp;{html.escape(f.reason)}</span>"
+                for f in result.failures[:5]
+            ]
+            if k > 5:
+                lines.append(f"<span style='color:#b4b4be'>… e mais {k - 5}.</span>")
+            self.fail_list.setText("<br/>".join(lines))
         self.res_open.show()
         self.res_again.setText("Baixar outro")
         self._show(self.p_result)
@@ -732,10 +796,10 @@ class MainWindow(QWidget):
             self._show(self.p_options)
             return
         self.result = None
-        self.res_icon.setText("✕")
-        self.res_icon.setStyleSheet("font-size:44px; font-weight:700; color:#ff6b6b;")
+        self.res_badge.set_state("error")
         self.res_title.setText("Algo deu errado")
         self.res_msg.setText(msg)
+        self.fail_box.hide()
         self.res_open.hide()
         self.res_again.setText("Voltar")
         self._show(self.p_result)
