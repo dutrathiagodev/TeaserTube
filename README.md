@@ -3,6 +3,7 @@
 </h1>
 
 <p align="center">
+  <a href="https://github.com/dutrathiagodev/TeaserTube"><img src="https://img.shields.io/github/stars/dutrathiagodev/TeaserTube?style=flat&label=%E2%98%85&color=FFD60A&labelColor=1b1b20" alt="Estrelas no GitHub" /></a>
   <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-FFD60A?style=flat&labelColor=1b1b20" alt="Licença MIT" />
   <img src="https://img.shields.io/badge/Windows%20%7C%20macOS%20%7C%20Linux-FFD60A?style=flat&labelColor=1b1b20" alt="Windows, macOS e Linux" />
   <img src="https://img.shields.io/badge/python-3.9%2B-FFD60A?style=flat&labelColor=1b1b20" alt="Python 3.9+" />
@@ -14,7 +15,7 @@
   Cole o link, escolha o formato e pronto. Open source, sem anúncios e sem instalar mais nada.
 </p>
 
-<h3 align="center"><a href="../../releases"><ins>Baixar o app</ins></a></h3>
+<h3 align="center"><a href="https://github.com/dutrathiagodev/TeaserTube/releases"><ins>Baixar o app</ins></a></h3>
 
 <p align="center">
   <img src="docs/assets/home.png" alt="Tela inicial do TeaserTube" width="860" />
@@ -56,7 +57,13 @@ Marque só os vídeos que quiser. Cada playlist vai para a própria pasta, numer
 ## Como usar
 
 Requer Python 3.9 ou mais novo (no Windows, marque "Add Python to PATH" ao instalar).
-Baixe ou clone o repositório e dê **dois cliques** no launcher do seu sistema:
+Baixe o ZIP do repositório (botão verde **Code**) ou clone:
+
+```bash
+git clone https://github.com/dutrathiagodev/TeaserTube.git
+```
+
+Depois dê **dois cliques** no launcher do seu sistema:
 
 | Sistema | Arquivo |
 |---------|---------|
