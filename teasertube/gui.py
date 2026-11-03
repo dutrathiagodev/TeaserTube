@@ -99,6 +99,7 @@ QComboBox {{ background: #1f1f26; border: 1px solid #2c2c35; border-radius: 12px
             padding-right: 34px; color: #f4f4f5; font-size: 14px; min-height: 22px; }}
 QComboBox:hover {{ border-color: #44444f; }}
 QComboBox::drop-down {{ border: none; width: 32px; }}
+QComboBox QFrame {{ background: #1f1f26; border: none; }}
 QComboBox QAbstractItemView {{ background: #1f1f26; color: #f4f4f5; border: 1px solid #2c2c35;
             selection-background-color: {YELLOW}; selection-color: #111; outline: none; padding: 4px; }}
 QProgressBar {{ background: #26262e; border: none; border-radius: 6px; height: 12px; }}
@@ -548,7 +549,8 @@ class MainWindow(QWidget):
         self.fmt_group.idToggled.connect(self._format_changed)
         fmt_row.addSpacing(8)
         self.quality = Combo()
-        self.quality.setMinimumWidth(230)
+        self.quality.setMinimumWidth(260)
+        self.quality.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.quality.currentIndexChanged.connect(self._update_size_hint)
         fmt_row.addWidget(self.quality)
         fmt_row.addStretch(1)
@@ -750,7 +752,8 @@ class MainWindow(QWidget):
                 size = core.fmt_size(core.estimate_bytes(info, "video", height)) if info else ""
                 self.quality.addItem(text + (f" · ~{size}" if size else ""), height)
 
-            add("Melhor qualidade", None)
+            best = max((h for h in info.heights if h >= 144), default=None) if info and info.kind == "video" else None
+            add(f"Melhor ({best}p)" if best else "Melhor qualidade", None)
             if info and info.kind == "video" and info.heights:
                 for h in info.heights:
                     if h >= 144:
