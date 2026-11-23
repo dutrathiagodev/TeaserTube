@@ -2,6 +2,11 @@
 
 Baixe vídeos e playlists do YouTube em **MP4** ou só o áudio em **MP3**, com uma interface simples: cole o link, escolha o formato e clique em Baixar.
 
+### Novidades da 0.1.3
+
+- Ícone do app sem a borda e sem o fundo branco nos cantos
+- Atualização das ferramentas usadas para gerar e assinar os arquivos desta release
+
 ### Qual arquivo baixar
 
 | Seu sistema | Arquivo | Como instalar |
